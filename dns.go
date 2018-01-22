@@ -54,23 +54,25 @@ func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, 
     request.Question[0] = dns.Question{fqdn, queryType, dns.ClassINET}
 
     // edns_subnet handling
-    eDnsSubnet := strings.Split(queryEdns, "/")
-    sourceNetmask, _ := strconv.Atoi(eDnsSubnet[1])
-    o := &dns.OPT{
-        Hdr: dns.RR_Header{
-            Name:   ".",
-            Rrtype: dns.TypeOPT,
-        },
+    if queryEdns != "" {
+        eDnsSubnet := strings.Split(queryEdns, "/")
+        sourceNetmask, _ := strconv.Atoi(eDnsSubnet[1])
+        o := &dns.OPT{
+            Hdr: dns.RR_Header{
+                Name:   ".",
+                Rrtype: dns.TypeOPT,
+            },
+        }
+        e := &dns.EDNS0_SUBNET{
+            Code:          dns.EDNS0SUBNET,
+            Address:       net.ParseIP(eDnsSubnet[0]),
+            Family:        1, // IP4
+            SourceNetmask: uint8(sourceNetmask),
+        }
+        o.SetUDPSize(dns.DefaultMsgSize)
+        o.Option = append(o.Option, e)
+        request.Extra = append(request.Extra, o)
     }
-    e := &dns.EDNS0_SUBNET{
-        Code:          dns.EDNS0SUBNET,
-        Address:       net.ParseIP(eDnsSubnet[0]),
-        Family:        1, // IP4
-        SourceNetmask: uint8(sourceNetmask),
-    }
-    o.SetUDPSize(dns.DefaultMsgSize)
-    o.Option = append(o.Option, e)
-    request.Extra = append(request.Extra, o)
 
     c := new(dns.Client)
     s := []string{DnsServerAddr, DnsServerPort}
@@ -106,7 +108,7 @@ func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, 
             m.Answer[i].Type    = h.Rrtype
             m.Answer[i].Ttl     = h.Ttl
 
-            sla := strings.Split(strings.Replace(answer.String(), "  ", " ", -1), "\t")
+            sla := strings.Split(strings.Replace(strings.Replace(answer.String(), "  ", " ", -1), " ", "\t", -1), "\t")
             m.Answer[i].Data    = sla[len(sla)-1] 
         }
     }

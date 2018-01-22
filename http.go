@@ -9,7 +9,7 @@ func EndPointResolve(c *gin.Context) {
     queryName       := c.Query("name")
     queryType       := c.DefaultQuery("type", "1")
     queryCd         := c.DefaultQuery("cd", "false")
-    queryEdns       := c.DefaultQuery("edns_client_subnet", "0.0.0.0/0")
+    queryEdns       := c.DefaultQuery("edns_client_subnet", "")
 
     qtype, _ := strconv.Atoi(queryType) 
     m := NewDnsMessageOutput()
