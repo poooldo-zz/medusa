@@ -5,7 +5,7 @@ import (
     "strings"
     "strconv"
     "net"
-    //"reflect"
+
     "github.com/miekg/dns"
 )
 
@@ -63,10 +63,16 @@ func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, 
                 Rrtype: dns.TypeOPT,
             },
         }
+        addr := net.ParseIP(eDnsSubnet[0])
+        family := uint16(1)
+        // check if it is an ipv4 or v6
+        if addr.To4() == nil {
+            family = uint16(2)
+        }
         e := &dns.EDNS0_SUBNET{
             Code:          dns.EDNS0SUBNET,
-            Address:       net.ParseIP(eDnsSubnet[0]),
-            Family:        1, // IP4
+            Address:       addr,
+            Family:        family, 
             SourceNetmask: uint8(sourceNetmask),
         }
         o.SetUDPSize(dns.DefaultMsgSize)
@@ -82,8 +88,6 @@ func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, 
         fmt.Printf("medusa.dns: error %s\n", err)
         return
     }
-
-    //ttype, _ := dns.TypeToString[queryType]
 
     m.Question          = make([]QuestionOutput, 1)
     m.Question[0].Name  = r.Question[0].Name
@@ -108,7 +112,7 @@ func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, 
             m.Answer[i].Type    = h.Rrtype
             m.Answer[i].Ttl     = h.Ttl
 
-            sla := strings.Split(strings.Replace(strings.Replace(answer.String(), "  ", " ", -1), " ", "\t", -1), "\t")
+            sla := strings.Split(strings.Replace(answer.String(), "  ", " ", -1), "\t")
             m.Answer[i].Data    = sla[len(sla)-1] 
         }
     }
