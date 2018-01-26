@@ -2,11 +2,10 @@ package medusa
 
 import (
     "fmt"
-    "strings"
-    "strconv"
-    "net"
-
     "github.com/miekg/dns"
+    "net"
+    "strconv"
+    "strings"
 )
 
 var (
@@ -45,13 +44,22 @@ func NewDnsMessageOutput() (m *DnsMessageOutput) {
     return
 }
 
-func (m *DnsMessageOutput) dnsRequest(domain string, queryType uint16, queryCd, queryEdns string) (err error) {
+func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns string) (err error) {
     request := new(dns.Msg)
     request.Id = dns.Id()
     request.RecursionDesired = true
     fqdn := dns.Fqdn(domain)
+
+    var qtype16 uint16
+    qtype, err := strconv.Atoi(queryType)
+    if err != nil {
+        qtype16 = dns.StringToType[strings.ToUpper(queryType)]
+    } else {
+        qtype16 = uint16(qtype)
+    }
+
     request.Question = make([]dns.Question, 1)
-    request.Question[0] = dns.Question{fqdn, queryType, dns.ClassINET}
+    request.Question[0] = dns.Question{fqdn, qtype16, dns.ClassINET}
 
     // edns_subnet handling
     if queryEdns != "" {

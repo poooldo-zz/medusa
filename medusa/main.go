@@ -1,16 +1,16 @@
 package main
 
 import (
-    "fmt"
-    "os"
     "flag"
-    "medusa"
+    "fmt"
     "github.com/gin-gonic/gin"
+    "medusa"
+    "os"
 )
 
 var (
-    flagServer  = flag.String("s", "", "dns server address to resolve query")
-    flagPort    = flag.String("p", "53", "dns server port to resolve query")
+    flagServer = flag.String("s", "", "dns server address to resolve query")
+    flagPort   = flag.String("p", "53", "dns server port to resolve query")
 )
 
 func usage() {
