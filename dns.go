@@ -50,6 +50,12 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
     request.RecursionDesired = true
     fqdn := dns.Fqdn(domain)
 
+    queryCheckingDisabled := false
+    if queryCd == "true"{
+        queryCheckingDisabled = true
+    }
+    request.CheckingDisabled = queryCheckingDisabled
+
     // convert type to int16 from int or string
     // depending of the user input
     var queryType16 uint16
@@ -98,7 +104,7 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
 
     if err != nil {
         fmt.Printf("medusa.dns: error %s\n", err)
-        return
+        return err
     }
 
     m.Question          = make([]QuestionOutput, 1)
