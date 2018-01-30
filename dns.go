@@ -50,16 +50,18 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
     request.RecursionDesired = true
     fqdn := dns.Fqdn(domain)
 
-    var qtype16 uint16
-    qtype, err := strconv.Atoi(queryType)
+    // convert type to int16 from int or string
+    // depending of the user input
+    var queryType16 uint16
+    queryTypeInt, err := strconv.Atoi(queryType)
     if err != nil {
-        qtype16 = dns.StringToType[strings.ToUpper(queryType)]
+        queryType16 = dns.StringToType[strings.ToUpper(queryType)]
     } else {
-        qtype16 = uint16(qtype)
+        queryType16 = uint16(queryTypeInt)
     }
 
     request.Question = make([]dns.Question, 1)
-    request.Question[0] = dns.Question{fqdn, qtype16, dns.ClassINET}
+    request.Question[0] = dns.Question{fqdn, queryType16, dns.ClassINET}
 
     // edns_subnet handling
     if queryEdns != "" {
@@ -72,8 +74,10 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
             },
         }
         addr := net.ParseIP(eDnsSubnet[0])
+        // family set default to ipv4
         family := uint16(1)
         // check if it is an ipv4 or v6
+        // set to v6 if not v4
         if addr.To4() == nil {
             family = uint16(2)
         }
@@ -111,7 +115,7 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
     if r.Rcode != dns.RcodeSuccess {
         m.Comment       = "error"
     } else {
-        m.Additional    = "" 
+        m.Additional    = ""
         m.EDnsSubnet    = queryEdns
         m.Answer    = make([]AnswerOutput, len(r.Answer))
         for i, answer := range r.Answer {
@@ -120,8 +124,8 @@ func (m *DnsMessageOutput) dnsRequest(domain, queryType, queryCd, queryEdns stri
             m.Answer[i].Type    = h.Rrtype
             m.Answer[i].Ttl     = h.Ttl
 
-            sla := strings.Split(strings.Replace(answer.String(), "  ", " ", -1), "\t")
-            m.Answer[i].Data    = sla[len(sla)-1] 
+            data := strings.Split(strings.Replace(answer.String(), "  ", " ", -1), "\t")
+            m.Answer[i].Data    = data[len(data)-1]
         }
     }
 
